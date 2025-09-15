@@ -543,34 +543,52 @@ $(document).ready(function () {
     });
 
     // Listen untuk konfirmasi peminjaman (optional)
-    window.Echo.channel('gudang13').listen('.peminjaman.status.update', (e) => {
-        if (e.peminjaman) {
-            const audio = document.getElementById('notifAudio');
+   window.Echo.channel('gudang13').listen('.peminjaman.status.update', (e) => {
+    if (e.peminjaman) {
+        // Tentukan pesan berdasarkan status
+        let statusMessage = '';
+        const status = e.peminjaman.status.toLowerCase();
+
+         const audio = document.getElementById('notifAudio');
             if (audio) {
                 audio.play().catch(err => console.log('Audio blocked'));
             }
 
-            // Show alert for status update
-            const alertDiv = document.createElement('div');
-            alertDiv.className = 'alert alert-info alert-dismissible fade show position-fixed';
-            alertDiv.style.top = '20px';
-            alertDiv.style.right = '20px';
-            alertDiv.style.zIndex = '9999';
-            alertDiv.innerHTML = `
-                <i class="bi bi-bell-fill me-2"></i>
-                <strong>Update Status!</strong><br>
-                Peminjaman Anda telah ${e.peminjaman.status.toLowerCase()}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            `;
-            document.body.appendChild(alertDiv);
-
-            setTimeout(() => {
-                if (alertDiv.parentNode) {
-                    alertDiv.remove();
-                }
-            }, 5000);
+        switch(status) {
+            case 'dipinjam':
+                statusMessage = 'Peminjaman anda telah dikonfirmasi oleh petugas';
+                break;
+            case 'ditolak':
+                statusMessage = 'Peminjaman anda telah ditolak oleh petugas';
+                break;
+            default:
+                statusMessage = `Peminjaman anda telah ${status}`;
+                break;
         }
-    });
+
+        // Show alert for status update
+        const alertDiv = document.createElement('div');
+        alertDiv.className = 'alert alert-info alert-dismissible fade show position-fixed';
+        alertDiv.style.top = '20px';
+        alertDiv.style.right = '20px';
+        alertDiv.style.zIndex = '9999';
+        alertDiv.style.minWidth = '300px';
+        alertDiv.innerHTML = `
+            <i class="fas fa-bell me-2"></i>
+            <strong>Update Status!</strong><br>
+            ${statusMessage}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.body.appendChild(alertDiv);
+
+        // Auto remove alert after 5 seconds
+        setTimeout(() => {
+            if (alertDiv.parentNode) {
+                alertDiv.remove();
+            }
+        }, 5000);
+    }
+});
 });
 </script>
 @endpush

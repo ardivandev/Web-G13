@@ -282,118 +282,121 @@ class PeminjamanController extends Controller
 
     // UPDATE STATUS dengan broadcast yang diperbaiki
     public function updateStatus(Request $request, $id)
-    {
-        if (!auth()->guard('admin')->check() && !auth()->guard('petugas')->check()) {
-            return response()->json(['error' => 'Unauthorized'], 401);
-        }
+{
+    if (!auth()->guard('admin')->check() && !auth()->guard('petugas')->check()) {
+        return response()->json(['error' => 'Unauthorized'], 401);
+    }
 
-         $raw = $request->input('status', '');
-         $normalized = ucfirst(strtolower(trim($raw))); // -> " dipinjam " => "Dipinjam"
-         $request->merge(['status' => $normalized]);
+    $raw = $request->input('status', '');
+    $normalized = ucfirst(strtolower(trim($raw))); // -> " dipinjam " => "Dipinjam"
+    $request->merge(['status' => $normalized]);
 
-        $request->validate([
-            'status' => 'required|in:Menunggu,Dipinjam,Ditolak,Selesai'
-        ]);
+    $request->validate([
+        'status' => 'required|in:Menunggu,Dipinjam,Ditolak,Selesai'
+    ]);
 
-        try {
-            $peminjaman = Peminjaman::with(['detail.barang', 'siswa', 'guru', 'mapel', 'ruangan'])->findOrFail($id);
-            $oldStatus = strtolower($peminjaman->status);
-            $newStatus = strtolower($request->status);
+    try {
+        $peminjaman = Peminjaman::with(['detail.barang', 'siswa', 'guru', 'mapel', 'ruangan'])->findOrFail($id);
+        $oldStatus = strtolower(trim($peminjaman->status));
+        $newStatus = strtolower(trim($request->status));
 
-            // STATUS DIPINJAM - Validasi stok terlebih dahulu
-            if ($newStatus === 'dipinjam' && $oldStatus === 'menunggu') {
-                $stokTidakCukup = [];
+        DB::beginTransaction();
 
-                // Cek stok untuk setiap barang
-                foreach ($peminjaman->detail as $detail) {
-                    $barang = Barang::find($detail->id_barang);
+        // CASE 1: STATUS BERUBAH DARI MENUNGGU KE DIPINJAM
+        if ($newStatus === 'dipinjam' && $oldStatus === 'menunggu') {
+            $stokTidakCukup = [];
 
-                    if (!$barang) {
-                        return back()->with('error', "Barang dengan ID {$detail->id_barang} tidak ditemukan!");
-                    }
+            // Cek stok untuk setiap barang
+            foreach ($peminjaman->detail as $detail) {
+                $barang = Barang::find($detail->id_barang);
 
-                    if ($barang->stok < $detail->jumlah) {
-                        $stokTidakCukup[] = [
-                            'nama' => $barang->nama_barang,
-                            'diminta' => $detail->jumlah,
-                            'tersedia' => $barang->stok
-                        ];
-                    }
-                }
-
-                if (!empty($stokTidakCukup)) {
-                    $pesanError = "Peminjaman tidak dapat disetujui karena stok tidak mencukupi:\n\n";
-                    foreach ($stokTidakCukup as $item) {
-                        $pesanError .= "• {$item['nama']}: diminta {$item['diminta']}, tersedia {$item['tersedia']}\n";
-                    }
-                    return back()->with('error', $pesanError);
-                }
-
-                DB::beginTransaction();
-                try {
-                    // Kurangi stok barang
-                    foreach ($peminjaman->detail as $detail) {
-                        $barang = Barang::find($detail->id_barang);
-                        $barang->decrement('stok', $detail->jumlah);
-                    }
-
-                    // Otomatis buat data pengembalian
-                    Pengembalian::create([
-                        'id_pinjam' => $peminjaman->id_pinjam,
-                        'tanggal_pengembalian' => null,
-                        'tanggal_harus_kembali' => now()->addDay()->format('Y-m-d'),
-                        'sanksi' => null
-                    ]);
-
-                    // Update status peminjaman
-                    $peminjaman->status = ucfirst($newStatus);
-                    $peminjaman->save();
-
-                    DB::commit();
-
-                    // Load fresh data untuk broadcast
-                    $peminjaman = Peminjaman::with(['siswa', 'guru', 'mapel', 'ruangan', 'detail.barang'])
-                        ->find($peminjaman->id_pinjam);
-
-                    // Broadcast update status
-                    try {
-                        $this->broadcastDirectPusher($peminjaman, 'peminjaman.status.update');
-                        \Log::info('Event PeminjamanStatusUpdate berhasil di-broadcast', ['id' => $peminjaman->id_pinjam, 'status' => $peminjaman->status]);
-                    } catch (\Exception $e) {
-                        \Log::error('Gagal broadcast status update: ' . $e->getMessage());
-                    }
-
-                    return back()->with('success', 'Peminjaman berhasil disetujui dan stok barang telah diperbarui.');
-
-                } catch (\Exception $e) {
+                if (!$barang) {
                     DB::rollBack();
-                    return back()->with('error', 'Gagal memproses persetujuan: ' . $e->getMessage());
+                    return back()->with('error', "Barang dengan ID {$detail->id_barang} tidak ditemukan!");
                 }
 
-            } else {
-                // Update status biasa untuk kasus lain
-                $peminjaman->status = ucfirst($newStatus);
-                $peminjaman->save();
-
-                // Load fresh data untuk broadcast
-                $peminjaman = Peminjaman::with(['siswa', 'guru', 'mapel', 'ruangan', 'detail.barang'])
-                    ->find($peminjaman->id_pinjam);
-
-                // Broadcast update status
-                try {
-                    $this->broadcastDirectPusher($peminjaman, 'peminjaman.status.update');
-                    \Log::info('Event PeminjamanStatusUpdate berhasil di-broadcast', ['id' => $peminjaman->id_pinjam, 'status' => $peminjaman->status]);
-                } catch (\Exception $e) {
-                    \Log::error('Gagal broadcast status update: ' . $e->getMessage());
+                if ($barang->stok < $detail->jumlah) {
+                    $stokTidakCukup[] = [
+                        'nama' => $barang->nama_barang,
+                        'diminta' => $detail->jumlah,
+                        'tersedia' => $barang->stok
+                    ];
                 }
-
-                return back()->with('success', 'Status berhasil diperbarui.');
             }
 
-        } catch (\Exception $e) {
-            return back()->with('error', 'Gagal memperbarui status: ' . $e->getMessage());
+            if (!empty($stokTidakCukup)) {
+                DB::rollBack();
+                $pesanError = "Peminjaman tidak dapat disetujui karena stok tidak mencukupi:\n\n";
+                foreach ($stokTidakCukup as $item) {
+                    $pesanError .= "• {$item['nama']}: diminta {$item['diminta']}, tersedia {$item['tersedia']}\n";
+                }
+                return back()->with('error', $pesanError);
+            }
+
+            // Kurangi stok barang
+            foreach ($peminjaman->detail as $detail) {
+                $barang = Barang::find($detail->id_barang);
+                $barang->decrement('stok', $detail->jumlah);
+            }
+
+            // Otomatis buat data pengembalian
+            Pengembalian::create([
+                'id_pinjam' => $peminjaman->id_pinjam,
+                'tanggal_pengembalian' => null,
+                'tanggal_harus_kembali' => now()->addDay()->format('Y-m-d'),
+                'sanksi' => null
+            ]);
+
+            $successMessage = 'Peminjaman berhasil disetujui dan stok barang telah diperbarui.';
         }
+        // CASE 2: STATUS BERUBAH DARI DIPINJAM KE STATUS LAIN (KEMBALIKAN STOK)
+        elseif ($oldStatus === 'dipinjam' && $newStatus !== 'dipinjam') {
+            // Kembalikan stok barang
+            foreach ($peminjaman->detail as $detail) {
+                $barang = Barang::find($detail->id_barang);
+                if ($barang) {
+                    $barang->increment('stok', $detail->jumlah);
+                }
+            }
+
+            $successMessage = "Status berhasil diperbarui dan stok barang telah dikembalikan.";
+        }
+        // CASE 3: STATUS LAINNYA (TIDAK ADA PERUBAHAN STOK)
+        else {
+            $successMessage = 'Status berhasil diperbarui.';
+        }
+
+        // Update status peminjaman
+        $peminjaman->status = ucfirst($newStatus);
+        $peminjaman->save();
+
+        DB::commit();
+
+        // Load fresh data untuk broadcast
+        $peminjaman = Peminjaman::with(['siswa', 'guru', 'mapel', 'ruangan', 'detail.barang'])
+            ->find($peminjaman->id_pinjam);
+
+        // Broadcast update status
+        try {
+            $this->broadcastDirectPusher($peminjaman, 'peminjaman.status.update');
+            \Log::info('Event PeminjamanStatusUpdate berhasil di-broadcast', [
+                'id' => $peminjaman->id_pinjam,
+                'old_status' => $oldStatus,
+                'new_status' => $peminjaman->status
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Gagal broadcast status update: ' . $e->getMessage());
+        }
+
+        return back()->with('success', $successMessage);
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        \Log::error('Error updating status: ' . $e->getMessage());
+        return back()->with('error', 'Gagal memperbarui status: ' . $e->getMessage());
     }
+}
+
 
     /**
      * METHOD BARU: Direct Pusher Broadcast (lebih reliable)
@@ -657,29 +660,45 @@ class PeminjamanController extends Controller
 
     // DESTROY METHOD - hapus peminjaman
     public function destroy($id)
-    {
-        $peminjaman = Peminjaman::findOrFail($id);
+{
+    $peminjaman = Peminjaman::with(['detail.barang'])->findOrFail($id);
 
-        DB::beginTransaction();
-        try {
-            // Kembalikan stok barang sebelum hapus
+    DB::beginTransaction();
+    try {
+        // HANYA kembalikan stok jika status peminjaman adalah "Dipinjam"
+        if (strtolower(trim($peminjaman->status)) === 'dipinjam') {
             foreach ($peminjaman->detail as $detail) {
                 $barang = Barang::find($detail->id_barang);
                 if ($barang) {
                     $barang->increment('stok', $detail->jumlah);
+                    \Log::info("Stok dikembalikan untuk barang: {$barang->nama_barang}, jumlah: {$detail->jumlah}");
                 }
             }
-
-            $peminjaman->detail()->delete();
-            $peminjaman->delete();
-
-            DB::commit();
-            return redirect()->route('petugas.peminjaman.index')->with('success', 'Peminjaman berhasil dihapus.');
-        } catch (\Throwable $e) {
-            DB::rollBack();
-            return back()->with('error', 'Gagal menghapus peminjaman: ' . $e->getMessage());
+            $message = 'Peminjaman berhasil dihapus dan stok barang telah dikembalikan.';
+        } else {
+            // Jika status masih "Menunggu", "Ditolak", atau "Selesai", tidak perlu kembalikan stok
+            $message = 'Peminjaman berhasil dihapus.';
+            \Log::info("Peminjaman dihapus tanpa mengembalikan stok. Status: {$peminjaman->status}");
         }
+
+        // Hapus detail peminjaman dan peminjaman
+        $peminjaman->detail()->delete();
+        $peminjaman->delete();
+
+        DB::commit();
+
+        // Tentukan route redirect berdasarkan guard
+        $redirectRoute = auth()->guard('admin')->check() ?
+            'admin.peminjaman.index' : 'petugas.peminjaman.index';
+
+        return redirect()->route($redirectRoute)->with('success', $message);
+
+    } catch (\Throwable $e) {
+        DB::rollBack();
+        \Log::error('Error deleting peminjaman: ' . $e->getMessage());
+        return back()->with('error', 'Gagal menghapus peminjaman: ' . $e->getMessage());
     }
+}
 
     // CART METHODS
     public function addToCart(Request $request)

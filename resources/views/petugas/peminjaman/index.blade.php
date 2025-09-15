@@ -1,7 +1,6 @@
 @extends('layouts.petugas.app')
 
 @section('content')
-<audio id="notifAudio" src="{{ asset('sounds/notifikasi.mp3') }}" preload="auto"></audio>
 
 <!-- Meta CSRF Token -->
 <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -161,11 +160,6 @@
                         <i class="fas fa-search"></i> Cari
                     </button>
                 </form>
-
-                {{-- <!-- Status koneksi real-time -->
-                <div id="connection-status" class="small text-muted connection-status connecting">
-                    <i class="fas fa-circle"></i> <span id="status-text">Menghubungkan...</span>
-                </div> --}}
             </div>
 
             <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
@@ -271,74 +265,15 @@
     </div>
 </div>
 
-<!-- Toast Container for Notifications -->
-{{-- <div class="toast-container"></div> --}}
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function() {
     console.log('Realtime script initialized');
 
-    const audio = document.getElementById('notifAudio');
     const tableBody = document.querySelector('#table-body');
 
     // Utility: safe text
     function safe(v, fallback = '-') {
         return (v === null || v === undefined || v === '') ? fallback : v;
-    }
-
-    function playNotificationSound() {
-        console.log('Attempting to play notification sound...');
-        if (audio) {
-            // Pastikan audio sudah ready
-            if (audio.readyState >= 2) {
-                audio.currentTime = 0; // Reset ke awal
-                audio.play()
-                    .then(() => {
-                        console.log('Audio played successfully');
-                    })
-                    .catch(e => {
-                        console.error('Audio play failed:', e);
-                        // Fallback: coba play tanpa promise
-                        try {
-                            audio.play();
-                        } catch (err) {
-                            console.error('Fallback audio play failed:', err);
-                        }
-                    });
-            } else {
-                console.warn('Audio not ready, waiting...');
-                audio.addEventListener('canplay', function() {
-                    audio.currentTime = 0;
-                    audio.play().catch(e => console.error('Delayed audio play failed:', e));
-                }, { once: true });
-            }
-        } else {
-            console.error('Audio element not found');
-        }
-    }
-
-    // Test function untuk memastikan audio berfungsi
-    function testAudio() {
-        console.log('Testing audio...');
-        playNotificationSound();
-    }
-
-    // Expose test function ke global scope untuk debugging
-    window.testAudio = testAudio;
-
-    // Preload audio dan test
-    if (audio) {
-        audio.addEventListener('loadeddata', function() {
-            console.log('Audio loaded successfully');
-        });
-
-        audio.addEventListener('error', function(e) {
-            console.error('Audio loading error:', e);
-        });
-
-        // Set volume
-        audio.volume = 0.5;
-
-        console.log('Audio element found:', audio.src);
     }
 
     // Render satu row peminjaman (returns HTML string)
@@ -464,27 +399,6 @@
         if (emptyRow) emptyRow.remove();
     }
 
-    // Enable user interaction untuk audio (required untuk autoplay)
-    let userInteracted = false;
-
-    document.addEventListener('click', function enableAudio() {
-        if (!userInteracted) {
-            userInteracted = true;
-            console.log('User interaction detected - audio enabled');
-
-            // Pre-load audio dengan user interaction
-            if (audio && audio.paused) {
-                audio.play().then(() => {
-                    audio.pause();
-                    audio.currentTime = 0;
-                    console.log('Audio primed for future playback');
-                }).catch(e => {
-                    console.log('Audio priming failed:', e);
-                });
-            }
-        }
-    }, { once: true });
-
     try {
         // Enable pusher debug
         if (window.Pusher && window.Pusher.logToConsole) {
@@ -514,31 +428,27 @@
 
         const channel = window.Echo.channel('gudang13');
 
-        let firstLoad = true;
-
-        // Event: peminjaman baru - PERBAIKAN UTAMA
+        // Event: peminjaman baru
         channel.listen('.peminjaman.baru', (e) => {
             console.log('Event .peminjaman.baru received:', e);
             if (e && e.peminjaman) {
                 console.log('Processing new peminjaman...');
-                insertNewRowTop(e.peminjaman);
 
-                 const existingRow = document.getElementById(`peminjaman-${e.peminjaman.id_pinjam}`);
+                const existingRow = document.getElementById(`peminjaman-${e.peminjaman.id_pinjam}`);
 
-        if (existingRow) {
-            // Kalau sudah ada → update aja, JANGAN bunyi
-            updateExistingRow(e.peminjaman);
-        } else {
-            // Kalau bener2 baru → insert + bunyi
-            insertNewRowTop(e.peminjaman);
-            playNotificationSound();
-        }
+                if (existingRow) {
+                    // Kalau sudah ada → update saja
+                    updateExistingRow(e.peminjaman);
+                } else {
+                    // Kalau benar-benar baru → insert
+                    insertNewRowTop(e.peminjaman);
+                }
             } else {
                 console.warn('Invalid peminjaman data received:', e);
             }
         });
 
-        // Event: status update - dengan audio untuk status tertentu
+        // Event: status update
         channel.listen('.peminjaman.status.update', (e) => {
             console.log('Event .peminjaman.status.update received:', e);
             if (e && e.peminjaman) {
@@ -546,21 +456,11 @@
             }
         });
 
-        // Setelah halaman selesai load, reset flag jadi false
-          window.addEventListener('load', () => {
-              setTimeout(() => {
-                  isFirstLoad = false;
-              }, 1500); // kasih delay biar aman
-          });
-
         console.log('Echo listeners attached for channel gudang13');
 
     } catch (err) {
         console.error('Realtime init error:', err);
     }
-
-    // Debug helper - tambahkan tombol test di console
-    console.log('Use testAudio() in console to test audio playback');
 });
 </script>
 
