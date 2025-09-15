@@ -1,0 +1,35 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 0px;
+}
+
+.header h1 {
+    height: 30px;
+}
+
+.card{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 25rem;
+    height: calc(100vh - 30px);
+}
+
+.card img {
+    width: 500px;
+    height: 500px;
+    border-radius: 50%;
+}
+
+.card .card_form{
+    background-color: antiquewhite;
+    padding: 3rem;
+    border-radius: 20px;
+    box-shadow: 0 0 50px rgba(0, 0, 0.1, 0.1);
+}
+
+.card .card_form .card_input {
+    text-align: center;
+}
