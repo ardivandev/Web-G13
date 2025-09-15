@@ -26,16 +26,23 @@ class LaporanController extends Controller
     $startDate = $request->get('start_date');
     $endDate   = $request->get('end_date');
 
-    // Ambil data peminjaman lengkap dengan relasi
-    $detailPeminjaman = Peminjaman::with(['detail.barang', 'siswa', 'guru', 'mapel', 'ruangan', 'pengembalian'])
-        ->when($startDate && $endDate, function ($q) use ($startDate, $endDate) {
-            // Gunakan filter tanggal_pinjam atau tanggal_pengembalian sesuai kebutuhan
-            $q->whereBetween('tanggal_pinjam', [$startDate, $endDate]);
-        })
-        ->get();
-
-    // Ambil data lain dari getData untuk konsistensi
+    // Ambil data dengan filter yang konsisten
     $data = $this->getData($request);
+
+    // Ambil data peminjaman lengkap dengan relasi menggunakan filter yang sama
+    $detailPeminjaman = Peminjaman::with(['detail.barang', 'siswa', 'guru', 'mapel', 'ruangan', 'pengembalian'])
+        ->whereHas('pengembalian', function($query) use ($startDate, $endDate) {
+            if ($startDate && $endDate) {
+                $query->whereBetween('tanggal_pengembalian', [$startDate, $endDate]);
+            }
+        })
+        ->when($startDate && $endDate, function ($q) use ($startDate, $endDate) {
+            $q->whereHas('pengembalian', function($query) use ($startDate, $endDate) {
+                $query->whereBetween('tanggal_pengembalian', [$startDate, $endDate]);
+            });
+        })
+        ->orderBy('tanggal_pinjam', 'desc')
+        ->get();
 
     $pdf = Pdf::loadView('pdf.laporan_gudang', [
         'startDate' => $startDate,
@@ -50,11 +57,11 @@ class LaporanController extends Controller
         'guruTerbanyak' => $data['guruTerbanyak'],
         'ruanganTerbanyak' => $data['ruanganTerbanyak'],
         'peminjamanTerlambat' => $data['peminjamanTerlambat'],
-        'detailPeminjaman' => $detailPeminjaman, // Kirim data detail peminjaman
+        'detailPeminjaman' => $detailPeminjaman,
     ]);
 
     return $pdf->download('laporan_gudang.pdf');
-}
+    }
 
     public function exportExcel(Request $request)
     {
@@ -622,6 +629,12 @@ class LaporanController extends Controller
     {
         $startDate = $request->get('start_date', now()->startOfMonth()->format('Y-m-d'));
         $endDate   = $request->get('end_date', now()->format('Y-m-d'));
+
+          $queryCondition = function ($query) use ($startDate, $endDate) {
+              if ($startDate && $endDate) {
+                  $query->whereBetween('tanggal_pengembalian', [$startDate, $endDate]);
+              }
+          };
 
 
         // Barang sering dipinjam

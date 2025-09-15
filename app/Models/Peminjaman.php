@@ -21,7 +21,8 @@ class Peminjaman extends Model
         'mulai_kbm',
         'selesai_kbm',
         'jaminan',
-        'status'
+        'status',
+        'tanggal_pinjam'
     ];
 
     // Relasi ke siswa

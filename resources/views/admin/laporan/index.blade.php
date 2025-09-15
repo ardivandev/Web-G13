@@ -78,11 +78,11 @@
     <h3 class="fw-bold text-dark m-0">
         <i class="fas fa-chart-line me-2 text-primary"></i>Laporan Gudang
     </h3>
-    <div class="d-flex gap-2">
+    {{-- <div class="d-flex gap-2">
         <a href="{{ route('admin.laporan.export-pdf') }}" class="btn btn-danger btn-sm rounded-3">
             <i class="fas fa-file-pdf me-1"></i> Export PDF
         </a>
-    </div>
+    </div> --}}
 </div>
 
 <!-- Filter -->
@@ -94,31 +94,35 @@
     </div>
     <div class="p-3">
         <form method="GET" action="{{ route('admin.laporan.index') }}" class="row g-3">
-            <div class="col-lg-4 col-md-6">
-                <label class="form-label fw-semibold">
-                    <i class="fas fa-calendar-alt me-1 text-primary"></i>Tanggal Mulai
-                </label>
-                <input type="date" name="start_date" class="form-control"
-                       value="{{ request('start_date') }}">
-            </div>
-            <div class="col-lg-4 col-md-6">
-                <label class="form-label fw-semibold">
-                    <i class="fas fa-calendar-check me-1 text-primary"></i>Tanggal Selesai
-                </label>
-                <input type="date" name="end_date" class="form-control"
-                       value="{{ request('end_date') }}">
-            </div>
-            <div class="col-lg-4 col-md-12 d-flex align-items-end">
-                <div class="d-flex w-100 gap-2">
-                    <button type="submit" class="btn btn-primary flex-fill rounded-3 mr-2">
-                        <i class="fas fa-search me-1"></i>Filter
-                    </button>
-                    <a href="{{ route('admin.laporan.index') }}" class="btn btn-secondary flex-fill rounded-3">
-                        <i class="fas fa-redo me-1"></i>Reset
-                    </a>
-                </div>
-            </div>
-        </form>
+    <div class="col-lg-4 col-md-6">
+        <label class="form-label fw-semibold">
+            <i class="fas fa-calendar-alt me-1 text-primary"></i>Tanggal Mulai
+        </label>
+        <input type="date" name="start_date" class="form-control"
+               value="{{ request('start_date', now()->startOfMonth()->format('Y-m-d')) }}">
+    </div>
+    <div class="col-lg-4 col-md-6">
+        <label class="form-label fw-semibold">
+            <i class="fas fa-calendar-check me-1 text-primary"></i>Tanggal Selesai
+        </label>
+        <input type="date" name="end_date" class="form-control"
+               value="{{ request('end_date', now()->format('Y-m-d')) }}">
+    </div>
+    <div class="col-lg-4 col-md-12 d-flex align-items-end">
+        <div class="d-flex w-100 gap-2">
+            <button type="submit" class="btn btn-primary flex-fill rounded-3 mr-2">
+                <i class="fas fa-search me-1"></i>Filter
+            </button>
+            <a href="{{ route('admin.laporan.index') }}" class="btn btn-secondary flex-fill rounded-3 mr-2">
+                <i class="fas fa-redo me-1"></i>Reset
+            </a>
+            <button type="submit" formaction="{{ route('admin.laporan.export-pdf') }}"
+                    class="btn btn-danger flex-fill rounded-3">
+                <i class="fas fa-file-pdf me-1"></i>PDF
+            </button>
+        </div>
+    </div>
+</form>
     </div>
 </div>
 
@@ -240,4 +244,27 @@
         </div>
     </div>
 </div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const exportPdfBtn = document.querySelector('#export-pdf-btn');
+    if (exportPdfBtn) {
+        exportPdfBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+
+            // Ambil nilai filter
+            const startDate = document.querySelector('input[name="start_date"]').value;
+            const endDate = document.querySelector('input[name="end_date"]').value;
+
+            // Build URL dengan parameter
+            let url = '{{ route("admin.laporan.export-pdf") }}';
+            const params = new URLSearchParams();
+
+            if (startDate) params.append('start_date', startDate);
+            if (endDate) params.append('end_date', endDate);
+
+            window.location.href = url + '?' + params.toString();
+        });
+    }
+});
+</script>
 @endsection

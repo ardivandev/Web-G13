@@ -118,6 +118,7 @@ class PeminjamanController extends Controller
                 'jaminan' => $request->role === 'siswa' ? $request->jaminan : null,
                 'role' => $request->role,
                 'status' => 'Menunggu',
+                'tanggal_pinjam' => now()->toDateString()
             ];
 
             $peminjaman = Peminjaman::create($peminjamanData);
@@ -231,6 +232,7 @@ class PeminjamanController extends Controller
                 'jaminan' => $request->jaminan ?? null,
                 'role' => $request->role,
                 'status' => 'Menunggu',
+                'tanggal_pinjam' => now()->toDateString()
             ]);
 
             // Detail peminjaman dari cart
