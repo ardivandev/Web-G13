@@ -215,7 +215,7 @@
                 <td><span class="badge badge-primary">{{ ucfirst($peminjaman->role) }}</span></td>
             </tr>
 
-            @if($peminjaman->role == 'siswa' && $peminjaman->siswa)
+            @if($peminjaman->role == 'SISWA' && $peminjaman->siswa)
             <tr>
                 <td style="font-weight: bold; padding: 4px 0;">Nama Siswa</td>
                 <td style="text-align: center;">:</td>

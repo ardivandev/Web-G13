@@ -162,7 +162,7 @@ class PeminjamanController extends Controller
 
             $redirectRoute = auth()->guard('admin')->check() ? 'admin.peminjaman.index' : 'petugas.peminjaman.index';
 
-            return redirect()->route($redirectRoute)->with('success', 'Peminjaman berhasil diajukan dan notifikasi real-time terkirim!');
+            return redirect()->route($redirectRoute)->with('success', 'Peminjaman berhasil diajukan ');
 
         } catch (\Throwable $e) {
             DB::rollBack();
@@ -273,7 +273,7 @@ class PeminjamanController extends Controller
             }
 
             return redirect()->route('pengguna.peminjaman.create')
-                ->with('success', 'Peminjaman berhasil diajukan dan notifikasi real-time terkirim!')
+                ->with('success', 'Peminjaman berhasil diajukan dan jangan tutup halaman ini sebelum menerima konfirmasi!')
                 ->with('peminjaman', $peminjaman);
 
         } catch (\Throwable $e) {

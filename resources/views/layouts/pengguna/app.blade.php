@@ -14,6 +14,9 @@
     {{-- Google Fonts --}}
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
+     <!-- Pusher Script -->
+    <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
+
     {{-- Custom Modern Style --}}
     <style>
         :root {
@@ -827,6 +830,7 @@
                 <li class="nav-item"><a class="nav-link" href="{{ url('/pengguna/index') }}">Beranda</a></li>
                 <li class="nav-item"><a class="nav-link" href="{{ url('/pengguna/index#barang') }}">Barang</a></li>
                 <li class="nav-item"><a class="nav-link" href="{{ url('/pengguna/tentang') }}">Tentang</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ route('login') }}">Login Admin/Petugas</a></li>
             </ul>
         </div>
     </div>

@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use App\Http\Controllers\{
+    AkunController,
     AuthController,
     BarangController,
     SiswaController,
@@ -25,15 +26,16 @@ use Illuminate\Support\Facades\Broadcast;
 Broadcast::channel('peminjaman-channel', function ($user) {
     return true;
 });
-// ===========================
+
+Broadcast::channel('gudang13', function ($user) {
+    return true; // Public channel, semua bisa akses
+});
+
 // Root redirect -> intro
-// ===========================
 Route::get('/', fn() => redirect('/welcome'));
 Route::view('/welcome', 'welcome');
 
-// ===========================
 // Login / Logout
-// ===========================
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthController::class, 'login']);
@@ -55,7 +57,6 @@ Route::get('/debug-peminjaman', function() {
         'cart_count' => $cart ? count($cart) : 0
     ]);
 });
-
 
 // Pengguna Routes (siswa/guru umum, tanpa login admin/petugas)
 Route::prefix('pengguna')->name('pengguna.')->group(function () {
@@ -107,7 +108,6 @@ Route::prefix('pengguna')->name('pengguna.')->group(function () {
     Route::get('/peminjaman/download-session', [PeminjamanController::class, 'downloadBuktiSession'])->name('peminjaman.download.session');
 });
 
-
 // Admin Routes
 Route::middleware('auth:admin')->prefix('admin')->name('admin.')->group(function () {
     // Dashboard
@@ -130,6 +130,9 @@ Route::middleware('auth:admin')->prefix('admin')->name('admin.')->group(function
     Route::resource('mapel', MapelController::class)->except(['show']);
     Route::resource('kategori', KategoriController::class)->except(['show']);
     Route::resource('ruangan', RuanganController::class)->except(['show']);
+    Route::get('akun', [AkunController::class, 'index'])->name('akun.index');
+    Route::put('akun/update-password', [AkunController::class, 'updatePassword'])->name('akun.updatePassword');
+
 
     //laporan
     Route::prefix('laporan')->name('laporan.')->group(function() {
@@ -167,7 +170,6 @@ Route::middleware('auth:admin')->prefix('admin')->name('admin.')->group(function
     Route::delete('guru/destroy-all', [GuruController::class, 'destroyAll'])->name('guru.destroyAll');
 });
 
-
 // Petugas Routes
 Route::middleware('auth:petugas')->prefix('petugas')->name('petugas.')->group(function () {
     // Dashboard
@@ -203,11 +205,23 @@ Route::middleware('auth:petugas')->prefix('petugas')->name('petugas.')->group(fu
     // barang import
     Route::post('barang/import', [BarangController::class, 'import'])->name('barang.import');
     Route::get('barang/template', [BarangController::class, 'template'])->name('barang.template');
+
+     Route::post('/gudang/toggle', [App\Http\Controllers\SettingController::class, 'toggleGudang'])
+        ->name('gudang.toggle');
+
+       Route::get('akun', [AkunController::class, 'index'])->name('akun.index');
+    Route::put('akun/update-password', [AkunController::class, 'updatePassword'])->name('akun.updatePassword');
+
+     Route::prefix('laporan')->name('laporan.')->group(function() {
+        Route::get('/', [LaporanController::class, 'index'])->name('index');
+        Route::get('/barang-sering', [LaporanController::class, 'barangSering'])->name('barang-sering');
+        Route::get('/export-excel', [LaporanController::class, 'exportExcel'])->name('export-excel');
+        Route::get('/export-pdf', [LaporanController::class, 'exportPdf'])->name('export-pdf');
+        Route::get('/chart-data', [LaporanController::class, 'getChartData'])->name('chart-data');
+    });
 });
 
-// ===========================
 // Error Handling Routes
-// ===========================
 Route::fallback(function () {
     return redirect('/welcome')->with('error', 'Halaman yang Anda cari tidak ditemukan.');
 });

@@ -293,6 +293,7 @@
         </div>
     @endif
 
+
     {{-- Header --}}
     <div class="text-center mb-4">
         <h2 class="fw-bold text-primary mb-2">Daftar Barang Tersedia</h2>
@@ -305,20 +306,20 @@
             <div class="col-md-6">
                 <div class="d-flex align-items-center">
                     <span class="me-3 fw-semibold">Status Gudang:</span>
-                    <span class="badge {{ $statusGudang === 'buka' ? 'bg-success' : 'bg-danger' }} fs-6 px-3 py-2">
-                        <i class="bi bi-{{ $statusGudang === 'buka' ? 'unlock-fill' : 'lock-fill' }} me-1"></i>
-                        {{ ucfirst($statusGudang) }}
+                    <span id="status-badge" class="badge {{ $statusGudang === 'buka' ? 'bg-success' : 'bg-danger' }} fs-6 px-3 py-2">
+                        <i id="status-icon" class="bi bi-{{ $statusGudang === 'buka' ? 'unlock-fill' : 'lock-fill' }} me-1"></i>
+                        <span id="status-text">{{ ucfirst($statusGudang) }}</span>
                     </span>
                 </div>
             </div>
             <div class="col-md-6">
                 <div class="d-flex justify-content-md-end justify-content-center mt-3 mt-md-0">
                     <a href="{{ $statusGudang === 'buka' ? route('pengguna.peminjaman.create') : '#' }}"
-                       class="btn btn-custom d-flex align-items-center {{ $statusGudang === 'tutup' ? 'disabled-link' : '' }}"
-                       id="peminjaman-link">
-                        <i class="bi bi-basket-fill me-2"></i>
-                        <span>Keranjang Peminjaman</span>
-                        <span class="badge bg-light text-dark ms-2 fw-bold" id="cart-count">0</span>
+                      class="btn btn-custom d-flex align-items-center {{ $statusGudang === 'tutup' ? 'disabled-link' : '' }}"
+                      id="peminjaman-link">
+                      <i class="bi bi-basket-fill me-2"></i>
+                      <span>Keranjang Peminjaman</span>
+                      <span class="badge bg-light text-dark ms-2 fw-bold" id="cart-count">0</span>
                     </a>
                 </div>
             </div>
@@ -482,10 +483,237 @@
 <script>
 $(document).ready(function() {
     let statusGudang = "{{ $statusGudang }}";
+    let isRefreshing = false; // Flag untuk mencegah multiple refresh
 
     // Inisialisasi
     updateCartCount();
     initializeTooltips();
+
+    // Setup Pusher untuk real-time updates dengan konfigurasi yang lebih robust
+    Pusher.logToConsole = {{ config('app.debug') ? 'true' : 'false' }};
+
+    var pusher = new Pusher('{{ env('PUSHER_APP_KEY') }}', {
+        cluster: '{{ env('PUSHER_APP_CLUSTER') }}',
+        forceTLS: true,
+        enabledTransports: ['ws', 'wss', 'xhr_polling', 'xhr_streaming'],
+        activityTimeout: 30000,
+        pongTimeout: 10000,
+        maxReconnectionAttempts: 6,
+        maxReconnectGapInSeconds: 30
+    });
+
+    var channel = pusher.subscribe('gudang13');
+    console.log('Channel subscribed:', channel);
+
+    // Connection monitoring
+    pusher.connection.bind('connecting', function() {
+        console.log('Pengguna: Connecting to Pusher...');
+    });
+
+    pusher.connection.bind('connected', function() {
+        console.log('Pengguna: Connected to Pusher successfully');
+    });
+
+    pusher.connection.bind('unavailable', function() {
+        console.error('Pengguna: Connection unavailable');
+    });
+
+    pusher.connection.bind('failed', function() {
+        console.error('Pengguna: Connection failed');
+    });
+
+    // Listen untuk perubahan status gudang
+    channel.bind('status.gudang.updated', function(data) {
+        console.log("=== PENGGUNA EVENT RECEIVED ===");
+        console.log("Raw data:", data);
+        console.log("Status:", data.status);
+        console.log("Timestamp:", data.timestamp);
+
+        // Cegah multiple refresh
+        if (isRefreshing) {
+            console.log('Already refreshing, ignoring event');
+            return;
+        }
+
+        // Debug DOM elements
+        const badge = document.getElementById('status-badge');
+        const icon = document.getElementById('status-icon');
+        const text = document.getElementById('status-text');
+        const link = document.getElementById('peminjaman-link');
+        const currentStatusEl = document.getElementById('current-status');
+
+        console.log('DOM elements found:', {
+            badge: badge ? 'yes' : 'no',
+            icon: icon ? 'yes' : 'no',
+            text: text ? 'yes' : 'no',
+            link: link ? 'yes' : 'no',
+            currentStatus: currentStatusEl ? 'yes' : 'no'
+        });
+
+        // Update variabel global
+        statusGudang = data.status;
+
+        // Update UI elements
+        if (data.status === 'buka') {
+            console.log('Updating to BUKA status');
+
+            if (badge) {
+                badge.classList.remove('bg-danger');
+                badge.classList.add('bg-success');
+                console.log('Badge classes updated:', badge.className);
+            }
+
+            if (text) {
+                text.innerText = 'Buka';
+                console.log('Text updated to:', text.innerText);
+            }
+
+            if (icon) {
+                icon.classList.remove('bi-lock-fill');
+                icon.classList.add('bi-unlock-fill');
+                console.log('Icon classes updated:', icon.className);
+            }
+
+            if (link) {
+                link.classList.remove('disabled-link');
+                link.setAttribute('href', "{{ route('pengguna.peminjaman.create') }}");
+                console.log('Link updated:', link.href);
+            }
+
+            if (currentStatusEl) {
+                currentStatusEl.textContent = 'buka';
+            }
+
+            showAlert('🎉 Gudang sudah dibuka! Anda dapat melakukan peminjaman.', 'success');
+        } else {
+            console.log('Updating to TUTUP status');
+
+            if (badge) {
+                badge.classList.remove('bg-success');
+                badge.classList.add('bg-danger');
+                console.log('Badge classes updated:', badge.className);
+            }
+
+            if (text) {
+                text.innerText = 'Tutup';
+                console.log('Text updated to:', text.innerText);
+            }
+
+            if (icon) {
+                icon.classList.remove('bi-unlock-fill');
+                icon.classList.add('bi-lock-fill');
+                console.log('Icon classes updated:', icon.className);
+            }
+
+            if (link) {
+                link.classList.add('disabled-link');
+                link.setAttribute('href', "#");
+                console.log('Link disabled');
+            }
+
+            if (currentStatusEl) {
+                currentStatusEl.textContent = 'tutup';
+            }
+
+            showAlert('⚠️ Gudang sudah ditutup. Peminjaman sementara tidak tersedia.', 'warning');
+        }
+
+        console.log('UI update completed');
+
+        // Set flag refresh dan refresh setelah 3 detik
+        isRefreshing = true;
+        console.log('Setting up refresh in 3 seconds...');
+
+        let countdown = 3;
+        const countdownInterval = setInterval(function() {
+            console.log('Refresh countdown:', countdown);
+            countdown--;
+        }, 1000);
+
+        setTimeout(function() {
+            clearInterval(countdownInterval);
+            console.log('Refreshing page now...');
+            // Force refresh dengan timestamp untuk mencegah cache
+            window.location.href = window.location.href +
+                (window.location.href.includes('?') ? '&' : '?') +
+                'refresh=' + new Date().getTime();
+        }, 3000);
+    });
+
+    // Debug buttons untuk testing (hapus di production)
+    $('#test-buka').click(function() {
+        console.log('=== MANUAL TEST BUKA ===');
+        updateStatusManually('buka');
+    });
+
+    $('#test-tutup').click(function() {
+        console.log('=== MANUAL TEST TUTUP ===');
+        updateStatusManually('tutup');
+    });
+
+    $('#check-dom').click(function() {
+        console.log('=== DOM CHECK ===');
+        console.log('status-badge:', document.getElementById('status-badge'));
+        console.log('status-icon:', document.getElementById('status-icon'));
+        console.log('status-text:', document.getElementById('status-text'));
+        console.log('peminjaman-link:', document.getElementById('peminjaman-link'));
+        console.log('current-status:', document.getElementById('current-status'));
+    });
+
+    // Function untuk test manual update
+    function updateStatusManually(newStatus) {
+        const badge = document.getElementById('status-badge');
+        const icon = document.getElementById('status-icon');
+        const text = document.getElementById('status-text');
+        const link = document.getElementById('peminjaman-link');
+        const currentStatusEl = document.getElementById('current-status');
+
+        console.log('Updating to:', newStatus);
+        console.log('Elements found:', {
+            badge: !!badge,
+            icon: !!icon,
+            text: !!text,
+            link: !!link
+        });
+
+        if (newStatus === 'buka') {
+            if (badge) {
+                badge.className = 'badge bg-success fs-6 px-3 py-2';
+            }
+            if (text) {
+                text.textContent = 'Buka';
+            }
+            if (icon) {
+                icon.className = 'bi bi-unlock-fill me-1';
+            }
+            if (link) {
+                link.classList.remove('disabled-link');
+                link.href = "{{ route('pengguna.peminjaman.create') }}";
+            }
+            if (currentStatusEl) {
+                currentStatusEl.textContent = 'buka';
+            }
+            showAlert('TEST: Gudang dibuka', 'success');
+        } else {
+            if (badge) {
+                badge.className = 'badge bg-danger fs-6 px-3 py-2';
+            }
+            if (text) {
+                text.textContent = 'Tutup';
+            }
+            if (icon) {
+                icon.className = 'bi bi-lock-fill me-1';
+            }
+            if (link) {
+                link.classList.add('disabled-link');
+                link.href = '#';
+            }
+            if (currentStatusEl) {
+                currentStatusEl.textContent = 'tutup';
+            }
+            showAlert('TEST: Gudang ditutup', 'warning');
+        }
+    }
 
     // Cegah klik ke halaman peminjaman jika gudang tutup
     $('#peminjaman-link').on('click', function(e) {
@@ -499,7 +727,6 @@ $(document).ready(function() {
     $('.add-to-cart-form').on('submit', function(e) {
         e.preventDefault();
 
-        // Cek status gudang
         if (statusGudang !== 'buka') {
             showAlert('Gudang sedang tutup, tidak bisa melakukan peminjaman!', 'warning');
             return;
@@ -522,7 +749,7 @@ $(document).ready(function() {
         }
 
         if (parseInt(jumlah) > parseInt(stokBarang)) {
-            showAlert(`Jumlah tidak boleh melebihi stok yang tersedia (${stokBarang})`, 'warning');
+            showAlert(`Jumlah tidak boleh melebihi stok (${stokBarang})`, 'warning');
             form.find('input[name="jumlah"]').focus().select();
             return;
         }
@@ -561,13 +788,11 @@ $(document).ready(function() {
             },
             error: function(xhr) {
                 let message = 'Terjadi kesalahan saat menambahkan barang';
-
-                if (xhr.responseJSON && xhr.responseJSON.message) {
+                if (xhr.responseJSON?.message) {
                     message = xhr.responseJSON.message;
-                } else if (xhr.responseJSON && xhr.responseJSON.errors) {
+                } else if (xhr.responseJSON?.errors) {
                     message = Object.values(xhr.responseJSON.errors).join(', ');
                 }
-
                 showAlert(message, 'danger');
                 console.error('Error:', xhr.responseText);
             },
@@ -581,42 +806,26 @@ $(document).ready(function() {
 
     // Fungsi untuk menampilkan alert
     function showAlert(message, type) {
-        // Remove existing alerts
         $('.alert').remove();
-
-        let alertClass = 'alert-' + type;
-        let iconClass = getIconClass(type);
-
-        let alertHtml = `
-            <div class="alert ${alertClass} alert-dismissible fade show shadow-sm" role="alert">
-                <i class="bi ${iconClass} me-2"></i>
-                ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        `;
-
-        $('.container-fluid').prepend(alertHtml);
-
-        // Auto dismiss after 5 seconds
-        setTimeout(function() {
-            $('.alert').fadeOut(500, function() {
-                $(this).remove();
-            });
-        }, 5000);
-
-        // Scroll to top to show alert
-        // $('html, body').animate({ scrollTop: 0 }, 300);
-    }
-
-    // Fungsi untuk mendapatkan icon berdasarkan type
-    function getIconClass(type) {
-        const icons = {
+        let icons = {
             'success': 'bi-check-circle-fill',
             'danger': 'bi-exclamation-triangle-fill',
             'warning': 'bi-exclamation-circle-fill',
             'info': 'bi-info-circle-fill'
         };
-        return icons[type] || 'bi-info-circle-fill';
+        let iconClass = icons[type] || 'bi-info-circle-fill';
+
+        let alertHtml = `
+            <div class="alert alert-${type} alert-dismissible fade show shadow-sm" role="alert">
+                <i class="bi ${iconClass} me-2"></i>${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+        $('.container-fluid').prepend(alertHtml);
+
+        setTimeout(() => {
+            $('.alert').fadeOut(500, function() { $(this).remove(); });
+        }, 6000);
     }
 
     // Fungsi untuk update cart count
@@ -628,14 +837,13 @@ $(document).ready(function() {
                 if (response.count !== undefined) {
                     $('#cart-count').text(response.count);
 
-                    // Animate cart count jika ada perubahan
                     if (response.count > 0) {
-    $('#cart-count').removeClass('bg-warning text-dark').addClass('bg-light text-dark');
-    $('#peminjaman-link').addClass('cart-active');
-} else {
-    $('#cart-count').removeClass('bg-warning text-dark').addClass('bg-light text-dark');
-    $('#peminjaman-link').removeClass('cart-active');
-}
+                        $('#cart-count').addClass('bg-light text-dark');
+                        $('#peminjaman-link').addClass('cart-active');
+                    } else {
+                        $('#cart-count').addClass('bg-light text-dark');
+                        $('#peminjaman-link').removeClass('cart-active');
+                    }
                 }
             },
             error: function() {
@@ -647,15 +855,46 @@ $(document).ready(function() {
     // Inisialisasi tooltips
     function initializeTooltips() {
         var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
             return new bootstrap.Tooltip(tooltipTriggerEl);
         });
     }
 
     // Refresh data setiap 30 detik
+    setInterval(updateCartCount, 30000);
+
+    // Tambahkan binding untuk subscription berhasil
+    channel.bind('pusher:subscription_succeeded', function() {
+        console.log('Pengguna: Successfully subscribed to gudang13 channel');
+    });
+
+    // Tambahkan binding untuk subscription error
+    channel.bind('pusher:subscription_error', function(err) {
+        console.error('Pengguna: Subscription error:', err);
+    });
+
+    // Periodic connection health check
     setInterval(function() {
-        updateCartCount();
+        if (pusher.connection.state === 'disconnected') {
+            console.warn('Pusher connection lost, attempting to reconnect...');
+            pusher.connect();
+        }
     }, 30000);
+
+    // Handle page visibility change untuk reconnect jika perlu
+    document.addEventListener('visibilitychange', function() {
+        if (!document.hidden && pusher.connection.state === 'disconnected') {
+            console.log('Page became visible, reconnecting Pusher...');
+            pusher.connect();
+        }
+    });
+
+    // Handle browser back button
+    window.addEventListener('popstate', function(event) {
+        if (isRefreshing) {
+            window.location.reload();
+        }
+    });
 });
 </script>
 @endpush

@@ -16,4 +16,7 @@ window.Echo.channel("gudang13")
     })
     .listen(".peminjaman.status.update", (e) => {
         console.log("🔄 Status Update:", e);
+    })
+    .listen(".status.gudang.updated", (e) => {
+        console.log("📢 Status Gudang:", e.status);
     });

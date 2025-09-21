@@ -67,7 +67,7 @@
     function redirectToLogin() {
         if (alreadyRedirected) return;
         alreadyRedirected = true;
-        window.location.href = "{{ route('login') }}";
+        window.location.href = "{{ route('pengguna.index') }}";
     }
 
     skipBtn.addEventListener('click', redirectToLogin);

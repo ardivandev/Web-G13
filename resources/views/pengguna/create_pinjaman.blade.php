@@ -266,7 +266,7 @@
                     </span>
                 </div>
 
-                @if($p->role == 'siswa')
+                @if($p->role == 'SISWA')
                     <p><strong>Nama Siswa:</strong> {{ $p->siswa->nama_siswa ?? 'N/A' }}
                         @if(isset($p->siswa->kelas))
                             <span class="text-muted">({{ $p->siswa->kelas }})</span>

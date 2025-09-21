@@ -39,7 +39,6 @@ class PetugasController extends Controller
             'username'       => $request->username,
             'email'          => $request->email,
             'password'       => Hash::make($request->password), // login
-            'password_asli'  => $request->password,             // tampil di index
         ]);
 
         return redirect()->route('admin.petugas.index')->with('success', 'Data petugas berhasil ditambahkan!');
@@ -69,7 +68,6 @@ class PetugasController extends Controller
 
         if ($request->filled('password')) {
             $data['password'] = Hash::make($request->password);
-            $data['password_asli'] = $request->password;
         }
 
         $petugas->update($data);
@@ -82,4 +80,5 @@ class PetugasController extends Controller
         Petugas::findOrFail($id)->delete();
         return redirect()->route('admin.petugas.index')->with('success', 'Data petugas berhasil dihapus!');
     }
+
 }

@@ -6,31 +6,45 @@
 
 <div class="row">
     <!-- Grafik Batang -->
-    <div class="col-lg-6 mb-4">
+    <div class="col-lg-12 mb-4">
         <div class="card shadow">
             <div class="card-header bg-primary text-white">Grafik Batang Peminjaman & Pengembalian</div>
             <div class="card-body">
-                <canvas id="chartPeminjaman" class="chart-small"></canvas>
+                <canvas id="chartPeminjaman" class="w-100" style="height: 300px;"></canvas>
             </div>
         </div>
     </div>
 
-    <!-- Grafik Garis -->
-    <div class="col-lg-6 mb-4">
-        <div class="card shadow">
-            <div class="card-header bg-success text-white">Grafik Garis Peminjaman & Pengembalian</div>
-            <div class="card-body">
-                <canvas id="lineChart" class="chart-small"></canvas>
-            </div>
-        </div>
-    </div>
-
-    <!-- Grafik Stok Barang -->
+    <!-- Tabel Stok Barang -->
     <div class="col-lg-12 mb-4">
         <div class="card shadow">
-            <div class="card-header bg-info text-white">Stok Barang</div>
+            <div class="card-header bg-info text-white">Tabel Stok Barang</div>
             <div class="card-body">
-                <canvas id="stokChart" class="chart-small"></canvas>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover">
+                        <thead class="table-info">
+                            <tr>
+                                <th>No</th>
+                                <th>Nama Barang</th>
+                                <th>Stok</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($stokBarang as $nama => $stok)
+                                <tr>
+                                    <td>{{ $loop->iteration }}</td>
+                                    <td>{{ $nama }}</td>
+                                    <td>{{ $stok }}</td>
+                                </tr>
+                            @endforeach
+                            @if($stokBarang->isEmpty())
+                                <tr>
+                                    <td colspan="3" class="text-center">Belum ada data stok barang</td>
+                                </tr>
+                            @endif
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -208,23 +222,23 @@
         data: {
             labels: bulanLabels,
             datasets: [
-                { label: 'Peminjaman', data: peminjamanData, backgroundColor: 'rgba(54, 162, 235, 0.6)' },
+                { label: 'Peminjaman', data: peminjamanData, backgroundColor: 'rgb(49, 191, 21)' },
                 { label: 'Pengembalian', data: pengembalianData, backgroundColor: 'rgba(75, 192, 192, 0.6)' }
             ]
         }
     });
 
     // Grafik Garis
-    new Chart(document.getElementById('lineChart').getContext('2d'), {
-        type: 'line',
-        data: {
-            labels: bulanLabels,
-            datasets: [
-                { label: 'Peminjaman', data: peminjamanData, borderColor: 'rgba(54, 162, 235, 1)', fill: false, tension: 0.1 },
-                { label: 'Pengembalian', data: pengembalianData, borderColor: 'rgba(75, 192, 192, 1)', fill: false, tension: 0.1 }
-            ]
-        }
-    });
+    // new Chart(document.getElementById('lineChart').getContext('2d'), {
+    //     type: 'line',
+    //     data: {
+    //         labels: bulanLabels,
+    //         datasets: [
+    //             { label: 'Peminjaman', data: peminjamanData, borderColor: 'rgb(49, 191, 21)', fill: false, tension: 0.1 },
+    //             { label: 'Pengembalian', data: pengembalianData, borderColor: 'rgba(75, 192, 192, 1)', fill: false, tension: 0.1 }
+    //         ]
+    //     }
+    // });
 
     // Grafik Stok Barang
     new Chart(document.getElementById('stokChart').getContext('2d'), {

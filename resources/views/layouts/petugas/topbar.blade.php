@@ -7,7 +7,8 @@
     <form action="{{ route('petugas.gudang.toggle') }}" method="POST" class="form-inline mr-auto">
         @csrf
         <button type="submit"
-            class="btn btn-sm {{ $statusGudang == 'buka' ? 'btn-danger' : 'btn-success' }}">
+            class="btn btn-sm {{ $statusGudang == 'buka' ? 'btn-danger' : 'btn-success' }}"
+            id="btn-gudang-toggle">
             {{ $statusGudang == 'buka' ? 'Tutup Gudang' : 'Buka Gudang' }}
         </button>
     </form>
@@ -15,7 +16,7 @@
     <!-- Menu Kanan -->
     <ul class="navbar-nav ml-auto align-items-center">
 
-        <!-- Nama Petugas -->
+        <!-- Nama Admin -->
         <li class="nav-item mr-3">
             <span class="nav-link">
                 <span class="mr-2 d-none d-lg-inline text-gray-600 small">

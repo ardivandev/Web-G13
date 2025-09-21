@@ -57,7 +57,6 @@
                             <th>Nama</th>
                             <th>Username</th>
                             <th>Email</th>
-                            <th>Password</th>
                             <th>Aksi</th>
                         </tr>
                     </thead>
@@ -68,7 +67,6 @@
                             <td>{{ $p->nama_petugas }}</td>
                             <td>{{ $p->username }}</td>
                             <td>{{ $p->email }}</td>
-                            <td>{{ $p->password_asli }}</td>
                             <td>
                                 <a href="{{ route('admin.petugas.edit', $p->id_petugas) }}" class="btn btn-sm btn-warning">Edit</a>
 

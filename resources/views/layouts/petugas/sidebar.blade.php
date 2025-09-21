@@ -168,5 +168,21 @@
             <i class="bi bi-arrow-counterclockwise"></i> Pengembalian
         </a>
     </li>
+
+    <div class="sidebar-heading">Laporan</div>
+
+    <li class="nav-item {{ request()->routeIs('laporan.*') ? 'active' : '' }}">
+        <a class="nav-link" href="{{ route('petugas.laporan.index') }}">
+            <i class="bi bi-file-earmark-text"></i> Rekap
+        </a>
+    </li>
+
+    <div class="sidebar-heading">Managemen Akun</div>
+
+    <li class="nav-item {{ request()->routeIs('akun.*') ? 'active' : '' }}">
+        <a class="nav-link" href="{{ route('petugas.akun.index') }}">
+            <i class="bi bi-file-earmark-text"></i> Akun
+        </a>
+    </li>
 </ul>
 @endauth

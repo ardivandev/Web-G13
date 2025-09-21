@@ -94,11 +94,6 @@
                 </div>
 
                 <hr>
-
-                <p class="mt-2 text-center">
-                  Lanjut sebagai siswa atau guru?
-                  <a href="{{ route('pengguna.index') }}" class="title">Lanjut</a>
-                </p>
             </form>
         </div>
     </div>
