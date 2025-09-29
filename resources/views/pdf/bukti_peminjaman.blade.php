@@ -171,32 +171,7 @@
     <div class="header">
         <h1>BUKTI PEMINJAMAN BARANG GUDANG</h1>
         <p>Tanggal:
-            @php
-                // Coba gunakan kolom timestamp yang mungkin ada
-                $timestamp = null;
-
-                // Prioritaskan kolom timestamp yang mungkin ada
-                if (isset($peminjaman->created_at)) {
-                    $timestamp = $peminjaman->created_at;
-                } elseif (isset($peminjaman->tanggal_pinjam)) {
-                    $timestamp = $peminjaman->tanggal_pinjam;
-                } elseif (isset($peminjaman->tgl_pinjam)) {
-                    $timestamp = $peminjaman->tgl_pinjam;
-                } elseif (isset($peminjaman->waktu_pinjam)) {
-                    $timestamp = $peminjaman->waktu_pinjam;
-                }
-
-                // Format tanggal Indonesia
-                if ($timestamp) {
-                    // Jika timestamp ada, format dengan waktu Indonesia
-                    $date = \Carbon\Carbon::parse($timestamp);
-                    echo $date->format('d/m/Y H:i');
-                } else {
-                    // Fallback ke waktu server saat ini (WIB)
-                    $now = new DateTime('now', new DateTimeZone('Asia/Jakarta'));
-                    echo $now->format('d/m/Y H:i');
-                }
-            @endphp
+           {{ now()->timezone('Asia/Jakarta')->format('d F Y, H:i') }}
             WIB
         </p>
     </div>
@@ -279,19 +254,7 @@
                 <td style="font-weight: bold; padding: 4px 0;">Tanggal Peminjaman</td>
                 <td style="text-align: center;">:</td>
                 <td>
-                    @php
-                        if (isset($peminjaman->created_at)) {
-                            echo date('d/m/Y H:i', strtotime($peminjaman->created_at));
-                        } elseif (isset($peminjaman->tanggal_pinjam)) {
-                            echo date('d/m/Y H:i', strtotime($peminjaman->tanggal_pinjam));
-                        } elseif (isset($peminjaman->tgl_pinjam)) {
-                            echo date('d/m/Y H:i', strtotime($peminjaman->tgl_pinjam));
-                        } else {
-                            // Default ke waktu server dengan zona waktu Indonesia
-                            $now = new DateTime('now', new DateTimeZone('Asia/Jakarta'));
-                            echo $now->format('d/m/Y H:i');
-                        }
-                    @endphp
+                  {{ now()->timezone('Asia/Jakarta')->format('d F Y, H:i') }}
                     WIB
                 </td>
             </tr>

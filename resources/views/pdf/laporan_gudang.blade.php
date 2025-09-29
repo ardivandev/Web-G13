@@ -598,12 +598,18 @@
                             <br>
                         @endforeach
                     </td>
-                    <td class="text-center">
-                        {{ \Carbon\Carbon::parse($item->tanggal_pinjam)->timezone('Asia/Jakarta')->format('d/m/Y H:i') }}
+                  <td class="text-center">
+                        @if($item->mulai_kbm && $item->tanggal_pinjam)
+                            {{ \Carbon\Carbon::parse($item->tanggal_pinjam)->timezone('Asia/Jakarta')->format('d/m/Y') }}<br>
+                            <strong>{{ \Carbon\Carbon::parse($item->mulai_kbm)->format('H:i') }}</strong>
+                        @else
+                            -
+                        @endif
                     </td>
                     <td class="text-center">
-                        @if($item->pengembalian)
-                            {{ \Carbon\Carbon::parse($item->pengembalian->tanggal_pengembalian)->timezone('Asia/Jakarta')->format('d/m/Y H:i') }}
+                        @if($item->selesai_kbm && $item->tanggal_pinjam)
+                            {{ \Carbon\Carbon::parse($item->tanggal_pinjam)->timezone('Asia/Jakarta')->format('d/m/Y') }}<br>
+                            <strong>{{ \Carbon\Carbon::parse($item->selesai_kbm)->format('H:i') }}</strong>
                         @else
                             -
                         @endif
@@ -750,7 +756,7 @@
                 @endif
             </div>
             <div class="column">
-                <h4 class="red-title">Peringatan Stok (≤5 unit)</h4>
+                <h4 class="red-title">Peringatan Stok (&lt; 5 unit)</h4>
                 @if($barangMenipis->count() > 0)
                     @foreach($barangMenipis->take(5) as $barang)
                     <div class="list-item">
