@@ -79,7 +79,7 @@
     /* ===== TIM KAMI ===== */
     .tim {
         display: grid;
-        grid-template-columns: repeat(3, 1fr); /* selalu 3 kolom */
+        grid-template-columns: repeat(3, 1fr);
         gap: 25px;
         justify-items: center;
     }
@@ -127,72 +127,67 @@
         text-decoration: none;
     }
     .tim .card a {
-        text-decoration: none;  /* hilangkan underline */
-        color: inherit;         /* ikut warna teks aslinya */
-        display: block;         /* biar link-nya blok penuh */
+        text-decoration: none;
+        color: inherit;
+        display: block;
     }
     .tim .card a h4,
     .tim .card a p {
         text-decoration: none;
         color: inherit;
     }
+
     /* ===== HOVER TIM KAMI ===== */
     .tim .card {
         cursor: pointer;
         transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
-
     .tim .card:hover {
         transform: translateY(-10px) scale(1.03);
         box-shadow: 0 15px 25px rgba(0,0,0,0.2);
     }
-
-    /* Efek gambar saat hover */
     .tim .card:hover img {
         transform: scale(1.1);
         filter: brightness(1.1);
     }
-
-    /* Efek teks saat hover */
     .tim .card:hover h4 {
-        color: #2c2a45;  /* lebih gelap dari #565477 */
+        color: #2c2a45;
+    }
+    .tim .card:hover p {
+        color: #474163;
     }
 
-    .tim .card:hover p {
-        color: #474163;  /* ganti jadi lebih kontras */
+    /* ===== BUTTON EVALUASI ===== */
+    .evaluasi-section {
+        text-align: center;
+        padding: 80px 20px;
+        background: linear-gradient(135deg, #f8f9fa, #ffffff);
+    }
+    .btn-evaluasi {
+        display: inline-block;
+        background: #565477;
+        color: #fff;
+        padding: 15px 40px;
+        border-radius: 50px;
+        font-weight: 600;
+        text-decoration: none;
+        font-size: 1.1rem;
+        transition: background 0.3s ease, transform 0.3s ease;
+    }
+    .btn-evaluasi:hover {
+        background: #403b5c;
+        transform: translateY(-5px);
+        box-shadow: 0 6px 12px rgba(0,0,0,0.15);
     }
 
     /* ===== RESPONSIVE ===== */
-    @media (max-width: 1024px) {
-        .header-tentang h1 {
-            font-size: 2.5rem;
-        }
-    }
     @media (max-width: 768px) {
-        .visi-misi, .tim {
-            flex-direction: column;
-            align-items: center;
-        }
-    }
-    @media (max-width: 480px) {
-        .header-tentang {
-            padding: 60px 15px;
-        }
-        .section {
-            padding: 40px 15px;
-        }
-        .visi-misi .card, .tim .card {
-            max-width: 100%;
-        }
-        .tim img {
-            max-height: 300px;
-        }
-        .kontak p {
-            font-size: 1rem;
+        .tim {
+            grid-template-columns: 1fr;
         }
     }
 
-    /* ===== ANIMASI TAMBAHAN ===== */
+    /* ===== ANIMASI ===== */
     .animate-fade-up {
         opacity: 0;
         transform: translateY(50px);
@@ -258,8 +253,17 @@
     </div>
 </div>
 
+{{-- Tambahan tombol Evaluasi --}}
+<div class="evaluasi-section animate-fade-up mt-5">
+    <h2>Ayo Beri Masukan untuk G13</h2>
+    <p style="color:#6c757d; font-size:1.1rem; margin-bottom:25px;">
+        Bantu kami meningkatkan sistem G13 dengan mengisi form evaluasi berikut.
+    </p>
+    <a href="https://forms.gle/7JUh2Pe15iZJVfg46" target="_blank" class="btn-evaluasi">Isi Form Evaluasi</a>
+</div>
+
 <script>
-    // Observer untuk teks dan card
+    // Observer untuk animasi
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
@@ -272,7 +276,7 @@
         observer.observe(el);
     });
 
-    // Observer khusus gambar tim
+    // Observer untuk gambar tim
     const imgObserver = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
