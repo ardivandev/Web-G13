@@ -20,17 +20,17 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local
 # Atur direktori kerja
 WORKDIR /var/www/html
 
-# Copy file proyek ke container
+# Copy semua file proyek
 COPY . .
 
 # Install dependency Laravel
 RUN composer install --no-dev --optimize-autoloader
 
-# Jalankan artisan optimize
-RUN php artisan config:clear && php artisan cache:clear && php artisan route:clear
-
-# Jalankan server PHP bawaan
-CMD php artisan serve --host=0.0.0.0 --port=8000
-
-# Port default Laravel
+# Expose port Laravel
 EXPOSE 8000
+
+# Jalankan Laravel (baru clear cache di runtime)
+CMD php artisan config:clear \
+    && php artisan cache:clear \
+    && php artisan route:clear \
+    && php artisan serve --host=0.0.0.0 --port=8000
